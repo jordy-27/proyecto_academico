@@ -1,117 +1,168 @@
-import json
-
-# TUPLA de campos: el orden y los nombres son fijos, por eso no es una lista.
-# La usan el Controlador y la Vista para no repetir textos sueltos.
-CAMPOS_CLIENTE = ("nombre", "apellido", "email", "telefono", "ciudad", "direccion")
+from datetime import date
 
 
-class Cliente:
-    """MODELO: representa a un cliente."""
+# =====================================================================
+# CLASE BASE: lo que los tres modelos comparten
+# =====================================================================
+class ModeloBase:
+    """Padre de todos los modelos. Guarda el id y define el comportamiento común."""
 
-    def __init__(self, id_cliente, nombre, apellido, email, telefono, ciudad, direccion):
-        self.id = id_cliente          # no usamos 'id' como parámetro: es una función de Python
+    def __init__(self, id_registro):
+        self.id = int(id_registro)
+
+    # ---- ÚNICO MÉTODO DE CLASE DEL PROYECTO ----
+    @classmethod
+    def desde_diccionario(cls, datos):
+        """Diccionario -> objeto. Escrito UNA vez y usado por los tres modelos.
+        cls es la clase que llamó: Cliente, Producto o Venta."""
+        datos = dict(datos)                 # copia, para no tocar el original
+        id_registro = datos.pop("id")       # saco el id
+        return cls(id_registro, **datos)    # el resto son los campos del modelo
+
+    # ---- MÉTODOS DE INSTANCIA ----
+    def a_diccionario(self):
+        # Objeto -> diccionario. Cada hijo agrega sus campos.
+        return {"id": self.id}
+
+    def etiqueta(self):
+        # POLIMORFISMO: cada hijo la reescribe a su manera
+        return f"registro {self.id}"
+
+    def __str__(self):
+        # Lo que se ve al hacer print(objeto). Llama a etiqueta(),
+        # así que cada modelo se imprime distinto sin cambiar esta línea.
+        return f"[{self.id}] {self.etiqueta()}"
+
+
+# =====================================================================
+# HERENCIA: Persona es la base de Cliente (y mañana, de Estudiante)
+# =====================================================================
+class Persona(ModeloBase):
+    """Todo lo que tiene una persona del sistema."""
+
+    def __init__(self, id_registro, nombre, apellido, email):
+        super().__init__(id_registro)      # el padre guarda el id
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
-        self.telefono = telefono
-        self.ciudad = ciudad
-        self.direccion = direccion
 
-    def obtener_nombre_completo(self):
+    def nombre_completo(self):
         return f"{self.nombre} {self.apellido}"
 
     def a_diccionario(self):
-        # Objeto -> diccionario (listo para JSON)
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "apellido": self.apellido,
-            "email": self.email,
-            "telefono": self.telefono,
-            "ciudad": self.ciudad,
-            "direccion": self.direccion,
-        }
+        datos = super().a_diccionario()    # {"id": ...} que arma el padre
+        datos["nombre"] = self.nombre
+        datos["apellido"] = self.apellido
+        datos["email"] = self.email
+        return datos
 
-    @classmethod
-    def desde_diccionario(cls, datos):
-        # Diccionario -> objeto. Es un método de la CLASE, no de un objeto:
-        # se usa así -> Cliente.desde_diccionario({...})
-        return cls(
-            datos["id"],
-            datos["nombre"],
-            datos["apellido"],
-            datos["email"],
-            datos["telefono"],
-            datos.get("ciudad", ""),      # .get por si el archivo es de una versión vieja
-            datos.get("direccion", ""),
-        )
-
-    def a_json(self):
-        return json.dumps(self.a_diccionario(), ensure_ascii=False)
-
-    def __str__(self):
-        return f"[{self.id}] {self.obtener_nombre_completo()} - {self.email}"
+    def etiqueta(self):
+        return self.nombre_completo()
 
 
-class Estudiante:
-    """MODELO: representa a un estudiante. Usa las cuatro colecciones."""
+# =====================================================================
+# Estudiante equivale a Cliente
+# =====================================================================
+class Estudiante(Persona):
+    """Estudiante ES UNA Persona, con carnet y carrera."""
 
-    def __init__(self, id_estudiante, nombre, apellido, email, carnet, notas=None, materias=None):
-        self.id = id_estudiante
+    def __init__(self, id_registro, nombre, apellido, email, carnet="", carrera=""):
+        super().__init__(id_registro, nombre, apellido, email)
+        self.carnet = carnet
+        self.carrera = carrera
+
+    def a_diccionario(self):
+        datos = super().a_diccionario()      # id + nombre + apellido + email
+        datos["carnet"] = self.carnet
+        datos["carrera"] = self.carrera
+        return datos
+
+    def etiqueta(self):
+        return f"{super().etiqueta()} · {self.carnet} · {self.carrera or 'sin carrera'}"
+
+
+# =====================================================================
+# Materia equivale a Producto: aquí vive todo lo estático
+# =====================================================================
+class Materia(ModeloBase):
+    """Materia ES UN ModeloBase."""
+
+    # ATRIBUTOS ESTÁTICOS: uno solo para todo el programa
+    CUPOS_MAXIMOS = 30
+    NOTA_APROBACION = 14
+
+    def __init__(self, id_registro, nombre, codigo, creditos=0, cupos=0):
+        super().__init__(id_registro)
         self.nombre = nombre
-        self.apellido = apellido
-        self.email = email
-        self.carnet = carnet                      # ej: EST2026001
-        # DICCIONARIO DE LISTAS: {"Matemática": [18, 19], "Inglés": [17]}
-        self.notas = notas if notas else {}
-        # CONJUNTO: materias en las que está inscrito, sin repetidos
-        self.materias = set(materias) if materias else set()
+        self.codigo = codigo
+        self.creditos = int(creditos)
+        self.cupos = int(cupos)
 
-    def obtener_nombre_completo(self):
-        return f"{self.nombre} {self.apellido}"
+    # MÉTODO ESTÁTICO: no usa self ni cls
+    @staticmethod
+    def es_nota_valida(valor):
+        try:
+            return 0 <= float(valor) <= 20
+        except (TypeError, ValueError):
+            return False
 
-    def inscribir_materia(self, materia):
-        # add() no duplica: si ya estaba inscrito, no pasa nada
-        self.materias.add(materia)
+    # MÉTODOS DE INSTANCIA
+    def hay_cupo(self):
+        return self.cupos > 0
 
-    def agregar_nota(self, materia, nota):
-        self.inscribir_materia(materia)
-        # setdefault crea la lista vacía la primera vez que aparece la materia
-        self.notas.setdefault(materia, []).append(nota)
+    def ocupar_cupo(self):
+        self.cupos -= 1
 
-    def obtener_promedio(self):
-        todas = []
-        for lista_notas in self.notas.values():
-            todas.extend(lista_notas)
-        if not todas:
-            return 0
-        return round(sum(todas) / len(todas), 2)
-
-    def materias_en_comun(self, otro_estudiante):
-        # INTERSECCIÓN de conjuntos: qué materias comparten dos estudiantes
-        return self.materias & otro_estudiante.materias
+    def liberar_cupo(self):
+        self.cupos += 1
 
     def a_diccionario(self):
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "apellido": self.apellido,
-            "email": self.email,
-            "carnet": self.carnet,
-            "notas": self.notas,
-            # JSON no sabe guardar un set: lo convertimos a lista ordenada
-            "materias": sorted(self.materias),
-        }
+        datos = super().a_diccionario()
+        datos["nombre"] = self.nombre
+        datos["codigo"] = self.codigo
+        datos["creditos"] = self.creditos
+        datos["cupos"] = self.cupos
+        return datos
 
-    @classmethod
-    def desde_diccionario(cls, datos):
-        return cls(
-            datos["id"], datos["nombre"], datos["apellido"], datos["email"],
-            datos["carnet"],
-            notas=datos.get("notas", {}),
-            # y al leer lo volvemos a convertir en set
-            materias=set(datos.get("materias", [])),
-        )
+    def etiqueta(self):
+        return f"{self.nombre} ({self.codigo}) · {self.creditos} créditos · cupos {self.cupos}"
 
-    def __str__(self):
-        return f"[{self.carnet}] {self.obtener_nombre_completo()} - Promedio: {self.obtener_promedio()}"
+
+# =====================================================================
+# Matricula equivale a Venta: une un estudiante con una materia
+# =====================================================================
+class Matricula(ModeloBase):
+    """Matrícula simple: un estudiante, una materia, un periodo."""
+
+    def __init__(self, id_registro, estudiante_id, materia_id, periodo,
+                 nota=None, fecha=""):
+        super().__init__(id_registro)
+        self.estudiante_id = int(estudiante_id)
+        self.materia_id = int(materia_id)
+        self.periodo = periodo
+        # None significa "todavía sin nota"
+        self.nota = float(nota) if nota is not None else None
+        self.fecha = fecha or date.today().isoformat()
+
+    def esta_aprobada(self):
+        # Se calcula, NO se guarda: así nunca queda desactualizada
+        return self.nota is not None and self.nota >= Materia.NOTA_APROBACION
+
+    def estado(self):
+        if self.nota is None:
+            return "Sin nota"
+        return "Aprobado" if self.esta_aprobada() else "Reprobado"
+
+    def a_diccionario(self):
+        datos = super().a_diccionario()
+        datos["estudiante_id"] = self.estudiante_id
+        datos["materia_id"] = self.materia_id
+        datos["periodo"] = self.periodo
+        datos["nota"] = self.nota
+        datos["fecha"] = self.fecha
+        return datos
+
+    def etiqueta(self):
+        nota = self.nota if self.nota is not None else "-"
+        return (f"{self.periodo} · estudiante {self.estudiante_id} · "
+                f"materia {self.materia_id} · nota {nota} · {self.estado()}")

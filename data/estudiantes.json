@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nombre": "Jordy",
+    "apellido": "Rodriguez",
+    "email": "jordy08@gmail.com",
+    "carnet": "EST2026001",
+    "carrera": "Ing Software"
+  },
+  {
+    "id": 2,
+    "nombre": "Anahi",
+    "apellido": "Balladares",
+    "email": "ana@gmail.com",
+    "carnet": "EST2026002",
+    "carrera": "Educacion Inicial"
+  },
+  {
+    "id": 3,
+    "nombre": "Yandry",
+    "apellido": "Teran",
+    "email": "yandry@gmail.com",
+    "carnet": "EST2026003",
+    "carrera": "Ing Software"
+  }
+]

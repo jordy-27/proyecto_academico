@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "nombre": "Calculo",
+    "codigo": "CAL101",
+    "creditos": 5,
+    "cupos": 28
+  },
+  {
+    "id": 2,
+    "nombre": "Matematicas",
+    "codigo": "MAT102",
+    "creditos": 8,
+    "cupos": 29
+  },
+  {
+    "id": 3,
+    "nombre": "Probabilidad",
+    "codigo": "PRO103",
+    "creditos": 7,
+    "cupos": 28
+  }
+]

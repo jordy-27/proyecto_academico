@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "estudiante_id": 1,
+    "materia_id": 1,
+    "periodo": "2026-1",
+    "nota": 15.0,
+    "fecha": "2026-10-12"
+  },
+  {
+    "id": 2,
+    "estudiante_id": 2,
+    "materia_id": 1,
+    "periodo": "2026-1",
+    "nota": 16.0,
+    "fecha": "2026-10-12"
+  },
+  {
+    "id": 3,
+    "estudiante_id": 3,
+    "materia_id": 2,
+    "periodo": "2026-1",
+    "nota": 9.0,
+    "fecha": "2026-10-12"
+  },
+  {
+    "id": 4,
+    "estudiante_id": 1,
+    "materia_id": 3,
+    "periodo": "2026-1",
+    "nota": 11.0,
+    "fecha": "2026-10-12"
+  },
+  {
+    "id": 5,
+    "estudiante_id": 3,
+    "materia_id": 3,
+    "periodo": "2026-1",
+    "nota": 19.0,
+    "fecha": "2026-10-12"
+  }
+]
